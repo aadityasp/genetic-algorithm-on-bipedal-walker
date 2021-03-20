@@ -12,41 +12,104 @@ https://github.com/openai/gym/wiki/BipedalWalker-v2
 
 import gym
 import numpy as np
+from numpy.random import randn
+from numpy.random import rand
+import itertools
+import random
 import pprint as pp
-env = gym.make('BipedalWalker-v3') #v2 is no longer a valid version
 
-for i_episode in range(20):
-    stable_walker_states = env.reset()
-    for t in range(100):
-        env.render()
-        #print(stable_walker_states)
-        #action = env.action_space.sample()
-        #observation, reward, done, info = env.step([1, -1, -1, 1])
-        actions = [[1, -1, -1, 1],[-1, 1, 1, -1]]
-        if t%2 == 0:
-            action = actions[0]
+
+
+env_name=  "BipedalWalker-v3"
+env= gym.make(env_name)
+print("Observation space:", env.observation_space)
+print("Action space:", env.action_space)
+
+class HillClimbingAgent():
+    def __init__(self, env):
+        self.state_dim = 24
+        self.build_model()
+        
+    def build_model(self):
+        self.w1 = 1e-4*np.random.rand(self.state_dim, 10)
+        self.w2 = 1e-4*np.random.rand(self.state_dim, 10)
+        self.w3 = 1e-4*np.random.rand(self.state_dim, 10)
+        self.w4 = 1e-4*np.random.rand(self.state_dim, 10)
+        self.best_reward = -np.Inf
+        self.best_w1 = np.copy(self.w1)
+        self.best_w2 = np.copy(self.w2)
+        self.best_w3 = np.copy(self.w3)
+        self.best_w4 = np.copy(self.w4)
+        self.noise_scale = 1e-2
+        
+    def get_action(self, state):
+        p1 = np.dot(state, self.w1)
+        p2 = np.dot(state, self.w2)
+        p3 = np.dot(state, self.w3)
+        p4 = np.dot(state, self.w4)
+        action = []
+        
+        # take neighbor action with maximum weight : argmax
+        action.append(self.random_from_action_range(np.argmax(p1)))
+        action.append(self.random_from_action_range(np.argmax(p2)))
+        action.append(self.random_from_action_range(np.argmax(p3)))
+        action.append(self.random_from_action_range(np.argmax(p4)))
+        return action
+    
+    # stochastic hill climbing: take random from nearest best neighbor
+    def random_from_action_range(self, index):
+        if index == 0:
+            return random.uniform(-1, -0.8)
+        elif index == 1:
+            return random.uniform(-0.8, -0.6)
+        elif index == 2:
+            return random.uniform(-0.6, -0.4)
+        elif index == 3:
+            return random.uniform(-0.4, -0.2)
+        elif index == 4:
+            return random.uniform(-0.2, 0)
+        elif index == 5:
+            return random.uniform(0, 0.2)
+        elif index == 6:
+            return random.uniform(0.2, 0.4)
+        elif index == 7:
+            return random.uniform(0.4, 0.6)
+        elif index == 8:
+            return random.uniform(0.6, 0.8)
+        elif index == 9:
+            return random.uniform(0.8, 1)
+    
+    def update_model(self, reward):
+        if reward >= self.best_reward:
+            self.best_reward = reward
+            self.best_w1 = np.copy(self.w1)
+            self.best_w2 = np.copy(self.w2)
+            self.best_w3 = np.copy(self.w3)
+            self.best_w4 = np.copy(self.w4)
+            self.noise_scale = max(self.noise_scale/2, 1e-3)
         else:
-            action = actions[1]
+            self.noise_scale = min(self.noise_scale*2, 2)
+            
+        self.w1 = self.best_w1 + self.noise_scale * np.random.rand(self.state_dim, 10)
+        self.w2 = self.best_w2 + self.noise_scale * np.random.rand(self.state_dim, 10)
+        self.w3 = self.best_w3 + self.noise_scale * np.random.rand(self.state_dim, 10)
+        self.w4 = self.best_w4 + self.noise_scale * np.random.rand(self.state_dim, 10)
 
-        observation, reward, done, info = env.step(action)
+agent = HillClimbingAgent(env)
+num_episodes = 100
 
-        # Action Space: Discrete space allows a fixed range of non-negative numbers, 
-        #               so in this case valid actions are either 0 or 1.
-        # print ("Action space", env.action_space) 
+for ep in range(num_episodes):
+    state = env.reset()
+    total_reward = 0
+    done = False
+    while not done:
+        action = agent.get_action(state)
+        #print ("Action: ", action)
+        state, reward, done, info = env.step(action)
+        env.render()
+        total_reward += reward
         
-        # print ("\nObservation: ", observation)
-        # print ("Total observations: ", len(observation))
-
-        # Observation Space: Box space represents an n-dimensional box, 
-        #                    so valid observations will be an array of 4 numbers
-        # print ("Observation space: ", env.observation_space)
-        
-        print ("Reward: ", reward, " at step: ", t)
-        print (action)
-        # print ("Info: ", info)
-
-        if done:
-            print("Episode finished after {} timesteps".format(t+1))
-            break
+    agent.update_model(total_reward)
+    print("Episode: {}, total_reward: {:.2f}".format(ep, total_reward))
 
 env.close()
