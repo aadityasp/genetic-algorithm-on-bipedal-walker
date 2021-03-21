@@ -110,10 +110,14 @@ class HillClimbingAgent():
             print ("lower reward")
             self.noise_scale = min(self.noise_scale*2, 2)
             
-        self.w1 = self.best_w1 + self.noise_scale * np.random.rand(self.state_dim, 20)
-        self.w2 = self.best_w2 + self.noise_scale * np.random.rand(self.state_dim, 20)
-        self.w3 = self.best_w3 + self.noise_scale * np.random.rand(self.state_dim, 20)
-        self.w4 = self.best_w4 + self.noise_scale * np.random.rand(self.state_dim, 20)
+        # self.w1 = self.best_w1 + self.noise_scale * np.random.rand(self.state_dim, 20)
+        # self.w2 = self.best_w2 + self.noise_scale * np.random.rand(self.state_dim, 20)
+        # self.w3 = self.best_w3 + self.noise_scale * np.random.rand(self.state_dim, 20)
+        # self.w4 = self.best_w4 + self.noise_scale * np.random.rand(self.state_dim, 20)
+        self.w1 = self.best_w1 * self.noise_scale
+        self.w2 = self.best_w2 * self.noise_scale
+        self.w3 = self.best_w3 * self.noise_scale
+        self.w4 = self.best_w4 * self.noise_scale
 
 
 agent = HillClimbingAgent(env)
@@ -134,7 +138,7 @@ for ep in range(num_episodes):
         steps += 1
         total_reward += reward
         
-    agent.update_model(total_reward/steps)
+    agent.update_model(total_reward - steps)
     print("Episode: {}, total_reward: {:.2f}".format(ep, total_reward))
 
 env.close()
