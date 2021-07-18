@@ -19,3 +19,7 @@ https://gym.openai.com/envs/BipedalWalker-v2/
 ![plot_gen_reward_100population_100gn](https://user-images.githubusercontent.com/14892793/126078513-4ed80f0c-05bf-451d-919d-317733cf3946.png)
 
 
+
+
+https://user-images.githubusercontent.com/14892793/126079121-0894c338-8a20-4fb5-b230-dd1b042df3bf.mp4
+
